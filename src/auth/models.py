@@ -1,16 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from database import Base
+from sqlalchemy import DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
+from jobs.models import Job
 
-class LoginUser(BaseModel):
-    email: EmailStr
-    password: str
 
-class RegisterUser(UserBase):
-    password: str
+class User(Base):
+    __tablename__ = "users"
 
-class UserResponse(UserBase):
-    id: int
-    model_config = {"from_attributes": True}
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+
+    jobs: Mapped[list["Job"]] = relationship("Job", back_populates="user")
+

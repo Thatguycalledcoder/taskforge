@@ -13,7 +13,7 @@ def get_job(job_id: int):
 
 @app.post("/login")
 def login(credentials: LoginUser):
-    return {"message": f"User {credentials.username} logged in successfully"}
+    return {"message": f"User {credentials.email} logged in successfully"}
 
 @app.patch("/jobs/{job_id}")
 def update_job(job_id: int, title: str | None, status: str | None):
