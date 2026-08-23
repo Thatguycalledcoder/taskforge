@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from auth.models import LoginUser, RegisterUser
 
 app = FastAPI()
 
@@ -11,16 +12,16 @@ def get_job(job_id: int):
     return {"message": f"Details of job {job_id}"}
 
 @app.post("/login")
-def login(username: str, password: str):
-    return {"message": f"User {username} logged in successfully"}
+def login(credentials: LoginUser):
+    return {"message": f"User {credentials.username} logged in successfully"}
 
 @app.patch("/jobs/{job_id}")
 def update_job(job_id: int, title: str | None, status: str | None):
     return {"message": f"Job {job_id} - {title} updated successfully with status: {status}"}
 
 @app.post("/register")
-def register(username: str, password: str):
-    return {"message": f"User {username} registered successfully"}
+def register(user: RegisterUser):
+    return {"message": f"User {user.username} registered successfully"}
 
 @app.delete("/jobs/{job_id}")
 def delete_job(job_id: int):
