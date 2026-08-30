@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class JobBase(BaseModel):
-    title: str
-    description: str
-    status: str
+    title: str = Field(min_length=3, max_length=100)
+    description: str = Field(max_length=255)
+    status: str = Field(max_length=50)
 
 
 class JobCreate(JobBase):
