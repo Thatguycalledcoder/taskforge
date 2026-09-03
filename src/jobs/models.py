@@ -19,6 +19,8 @@ class JobStatus(str, Enum):
 
 
 class Job(Base):
+    from users.models import User
+
     __tablename__ = "jobs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

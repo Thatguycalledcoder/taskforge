@@ -8,6 +8,8 @@ from core.database import Base
 
 
 class User(Base):
+    from job.models import Job
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
