@@ -38,4 +38,5 @@ def generate_secret_key(length: int = 32) -> str:
 
     return secrets.token_hex(length)
 
+
 set_env("SECRET_KEY", generate_secret_key())
