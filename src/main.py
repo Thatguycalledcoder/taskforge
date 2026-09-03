@@ -1,5 +1,10 @@
-from fastapi import FastAPI
-from auth.models import LoginUser, RegisterUser
+from fastapi import FastAPI, Request, Depends, status, HTTPException
+from sqlalchemy.orm import Session
+from core.database import get_db, Base, engine
+from sqlalchemy import select, or_
+from auth.schemas import LoginUser, RegisterUser, UserResponse
+from auth.models import User
+from typing import Annotated
 
 app = FastAPI()
 
@@ -19,9 +24,33 @@ def login(credentials: LoginUser):
 def update_job(job_id: int, title: str | None, status: str | None):
     return {"message": f"Job {job_id} - {title} updated successfully with status: {status}"}
 
-@app.post("/register")
-def register(user: RegisterUser):
-    return {"message": f"User {user.username} registered successfully"}
+@app.post(
+        "/register",
+        response_model=UserResponse,
+        status_code=status.HTTP_201_CREATED
+        )
+def register(user: RegisterUser, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(User).where(
+                or_(User.username == user.username, User.email == user.email)
+            ))
+    user_exists = result.scalars().first()
+    if user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username or email already exists"
+        )
+
+    new_user = User(
+        username=user.username,
+        email=user.email,
+        password=user.password
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
 
 @app.delete("/jobs/{job_id}")
 def delete_job(job_id: int):
