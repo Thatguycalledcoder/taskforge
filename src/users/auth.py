@@ -64,7 +64,7 @@ def verify_access_token(token: str) -> str | None:
     except jwt.InvalidTokenError:
         return None
     else:
-        return payload.get("sub")
+        return payload["sub"]
 
 
 async def get_current_user(
