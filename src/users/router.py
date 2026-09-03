@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
@@ -10,6 +9,7 @@ from core.schemas import Token
 from .auth import create_access_token, hash_password, verify_password
 from .models import User
 from .schemas import LoginUser, RegisterUser, UserResponse
+from .service import get_user_by_email, get_user_by_username
 
 router = APIRouter()
 
@@ -18,20 +18,14 @@ router = APIRouter()
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
 async def register(user: RegisterUser, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(
-        select(User).where(func.lower(User.username) == user.username.lower())
-    )
-    username_exists = result.scalars().first()
+    username_exists = await get_user_by_username(db, user.username)
     if username_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already exists",
         )
 
-    result = await db.execute(
-        select(User).where(func.lower(User.email) == user.email.lower())
-    )
-    email_exists = result.scalars().first()
+    email_exists = await get_user_by_email(db, user.email)
     if email_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -53,10 +47,7 @@ async def register(user: RegisterUser, db: Annotated[AsyncSession, Depends(get_d
 
 @router.post("/login", response_model=Token)
 async def login(user: LoginUser, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(
-        select(User).where(func.lower(User.email) == user.email.lower())
-    )
-    db_user = result.scalars().first()
+    db_user = await get_user_by_email(db, user.email)
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
