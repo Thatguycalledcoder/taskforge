@@ -1,12 +1,7 @@
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from sqlalchemy import or_, select
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 
-from core.database import get_db
-from users.models import User
-from users.schemas import LoginUser, RegisterUser, UserResponse
+from users.schemas import LoginUser
 
 app = FastAPI()
 
@@ -31,29 +26,6 @@ def update_job(job_id: int, title: str | None, status: str | None):
     return {
         "message": f"Job {job_id} - {title} updated successfully with status: {status}"
     }
-
-
-@app.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: RegisterUser, db: Annotated[Session, Depends(get_db)]):
-    result = db.execute(
-        select(User).where(
-            or_(User.username == user.username, User.email == user.email)
-        )
-    )
-    user_exists = result.scalars().first()
-    if user_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or email already exists",
-        )
-
-    new_user = User(username=user.username, email=user.email, password=user.password)
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user
 
 
 @app.delete("/jobs/{job_id}")

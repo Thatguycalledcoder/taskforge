@@ -5,10 +5,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.schemas import Token
 
-from .auth import hash_password
+from .auth import create_access_token, hash_password, verify_password
 from .models import User
-from .schemas import RegisterUser, UserResponse
+from .schemas import LoginUser, RegisterUser, UserResponse
 
 router = APIRouter()
 
@@ -48,3 +49,20 @@ async def register(user: RegisterUser, db: Annotated[AsyncSession, Depends(get_d
     await db.refresh(new_user)
 
     return new_user
+
+
+@router.post("/login", response_model=Token)
+async def login(user: LoginUser, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == user.email.lower())
+    )
+    db_user = result.scalars().first()
+    if not db_user or not verify_password(user.password, db_user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(data={"sub": str(db_user.id)})
+    return Token(access_token=access_token, token_type="bearer")
